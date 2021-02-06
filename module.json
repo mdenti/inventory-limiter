@@ -2,11 +2,14 @@
   "name": "inventory-limiter",
   "title": "TPoaJ - Inventory Limiter",
   "description": "Limit size of inventory based on character stats.",
-  "author": "MD",
-  "version": "1.0.0",
+  "author": "Mattia Denti",
+  "version": "1.1.0",
   "minimumCoreVersion": "0.6.0",
   "compatibleCoreVersion": "0.7.9",
   "system": "dnd5e",
+  "url": "https://github.com/mdenti/inventory-limiter",
+  "manifest": "https://raw.githubusercontent.com/mdenti/inventory-limiter/master/module.json",
+  "download": "https://raw.githubusercontent.com/mdenti/inventory-limiter/master/inventory-limiter.zip",
   "esmodules": [
     "scripts/module.js"
   ],

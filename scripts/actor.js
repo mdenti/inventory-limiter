@@ -1,15 +1,17 @@
-function modifier(value) {
-  return Math.floor((value - 10) / 2);
-}
+import { MODULE_ID, Settings } from './settings.js';
 
 function baseCarryLimit(actorData) {
-  const baseLimit = game.settings.get("inventory-limiter", "CarryLimit");
-  const strMod = modifier(actorData.data.abilities.str.value);
-  return baseLimit + strMod;
+  const baseLimit = game.settings.get(MODULE_ID, Settings.CarryLimit);
+  const ability = game.settings.get(MODULE_ID, Settings.SelectedAbility);
+  if (ability !== 'none') {
+    const mod = actorData.data.abilities[ability].mod;
+    return baseLimit + mod;
+  }
+  return baseLimit;
 }
 
 function carryLimit(actorData) {
-  const bagOfHoldingSize = game.settings.get("inventory-limiter", "BagOfHoldingSize");
+  const bagOfHoldingSize = game.settings.get(MODULE_ID, Settings.BagOfHoldingSize);
   const hasBagOfHolding = (actorData.items || []).some(function (item) {
     return !item.flags.isStored && item.type === 'backpack' && item.name === 'Bag of Holding';
   });
@@ -20,7 +22,7 @@ function carryLimit(actorData) {
 }
 
 function backpackCarryLimit(actorData) {
-  const backpackSize = game.settings.get("inventory-limiter", "BackpackSize");
+  const backpackSize = game.settings.get(MODULE_ID, Settings.BackpackSize);
   return carryLimit(actorData) + backpackSize;
 }
 
@@ -61,7 +63,7 @@ export function initActor() {
       const actorData = this.data;
       const data = actorData.data;
       // Add stealth disadvantage if inventory limit is exceeded
-      if (skillId === "ste" && data.attributes.carryLimitExceeded) {
+      if (skillId === 'ste' && data.attributes.carryLimitExceeded) {
         const chatData = {
           content: `<div class="invlim-reminder-text">${actorData.name} is wearing a backpack, disadvantage to stealth rolls!</div>`,
           type: 0,

@@ -70,31 +70,31 @@ export async function initActorSheet() {
 
     _onMoveToStorage(event) {  
       event.preventDefault();
-      const itemId = event.currentTarget.closest(".item").dataset.itemId;
+      const itemId = event.currentTarget.closest('.item').dataset.itemId;
       this.actor.moveItemToStorage(itemId);
     }
 
     _onMoveToInventory(event) {
       event.preventDefault();
-      const itemId = event.currentTarget.closest(".item").dataset.itemId;
+      const itemId = event.currentTarget.closest('.item').dataset.itemId;
       this.actor.moveItemToInventory(itemId);
     }
 
     _onDeleteFromStorage(event) {
       event.preventDefault();
-      const itemId = event.currentTarget.closest(".item").dataset.itemId;
+      const itemId = event.currentTarget.closest('.item').dataset.itemId;
       this.actor.deleteOwnedItem(itemId);
     }
   }
 
-  Actors.unregisterSheet("dnd5e", ActorSheet5eCharacter)
-  Actors.registerSheet("dnd5e", ActorSheet5eLimitedInventory, {
-    types: ["character"],
+  Actors.unregisterSheet('dnd5e', ActorSheet5eCharacter)
+  Actors.registerSheet('dnd5e', ActorSheet5eLimitedInventory, {
+    types: ['character'],
     makeDefault: true,
-    label: "DND5E.SheetClassCharacter"
+    label: 'InvLim.SheetClassCharacter'
   });
 
   await loadTemplates([
-    "modules/inventory-limiter/templates/character-item-storage.html",
+    'modules/inventory-limiter/templates/character-item-storage.html',
   ]);
 }
