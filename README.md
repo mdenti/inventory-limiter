@@ -10,7 +10,6 @@ Custom inventory rules for the TPoaJ D&D campaign.
 - Automatically unequip stored items
 - Disadvantage added to automatic stealth rolls if character is wearing a backpack
 - Reminder message in chat about stealth roll rule if character is wearing a backpack
-
 - Weightless items are not counted in the carried items
 - Item quantity is considered when calculating carried items
 - Ammo bundles (e.g. Arrows) with quantity > 1 are counted as a single carried item

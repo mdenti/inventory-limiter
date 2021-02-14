@@ -29,7 +29,7 @@ function backpackCarryLimit(actorData) {
 function carriedItems(actorData) {
   return (actorData.items || []).reduce(function (acc, item) {
     if (!item.flags.isStored && item.data.weight) {
-      return acc + (item.data.consumableType === 'ammo' ? 1 : item.data.quantity);
+      return acc + (item.data.consumableType === 'ammo' ? 1 : +item.data.quantity);
     }
     return acc;
   }, 0);
@@ -64,20 +64,22 @@ export function initActor() {
       const data = actorData.data;
       // Add stealth disadvantage if inventory limit is exceeded
       if (skillId === 'ste' && data.attributes.carryLimitExceeded) {
-        const chatData = {
-          content: `<div class="invlim-reminder-text">${actorData.name} is wearing a backpack, disadvantage to stealth rolls!</div>`,
-          type: 0,
-          speaker: {
-            alias: 'Reminder',
-            scene: game.user.viewedScene,
-          },
-        };
-        ChatMessage.create(chatData, {});
         const stealthRollOptions = mergeObject(options, {
           advantage: false,
           disadvantage: options.advantage ? false : true,
         });
-        return super.rollSkill(skillId, stealthRollOptions);
+        new Dialog({
+          content:
+            'You are wearing a backpack. Stealth checks are at a disadvantage!',
+          buttons: {
+            ok: {
+              label: 'Aight',
+              callback: function () {
+                return super.rollSkill(skillId, stealthRollOptions);
+              },
+            },
+          },
+        }).render(true);
       }
       return super.rollSkill(skillId, options);
     }
@@ -85,9 +87,9 @@ export function initActor() {
     async moveItemToStorage(itemId) {
       await this.updateOwnedItem({ _id: itemId, data: { equipped: false }, flags: { isStored: true }});
     }
-    
+
     async moveItemToInventory(itemId) {
-      await this.updateOwnedItem({ _id: itemId, flags: { isStored: false }});
+      await this.updateOwnedItem({ _id: itemId, flags: { isStored: false } });
     }
   }
 
