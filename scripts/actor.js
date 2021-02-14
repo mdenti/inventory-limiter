@@ -68,14 +68,15 @@ export function initActor() {
           advantage: false,
           disadvantage: options.advantage ? false : true,
         });
-        new Dialog({
+        const rollSkill = super.rollSkill.bind(this);
+        return new Dialog({
           content:
             'You are wearing a backpack. Stealth checks are at a disadvantage!',
           buttons: {
             ok: {
               label: 'Aight',
               callback: function () {
-                return super.rollSkill(skillId, stealthRollOptions);
+                return rollSkill(skillId, stealthRollOptions);
               },
             },
           },
