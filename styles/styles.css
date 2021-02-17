@@ -20,3 +20,19 @@
   color: orangered;
   text-shadow: 1px 1px 3px #ccc;
 }
+
+.dnd5e.sheet .items-list .items-header {
+  height: 24px;
+}
+
+.dnd5e.sheet .items-list .items-header.invlim-header-large {
+  height: 28px;
+}
+.dnd5e.sheet .items-list .items-header.invlim-header-large h3 {
+  font-size: 20px;
+  color: #556b2f;
+}
+
+.dnd5e.sheet.actor.character .inventory .item-controls {
+  flex: 0 0 80px;
+}

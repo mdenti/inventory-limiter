@@ -1,6 +1,13 @@
 import { MODULE_ID, Settings } from './settings.js';
 
-function baseCarryLimit(actorData) {
+export const ItemLocation = {
+  Inventory: 'inventory',
+  Backpack: 'backpack',
+  BagOfHolding: 'bagofholding',
+  Storage: 'storage',
+};
+
+function carryLimit(actorData) {
   const baseLimit = game.settings.get(MODULE_ID, Settings.CarryLimit);
   const ability = game.settings.get(MODULE_ID, Settings.SelectedAbility);
   if (ability !== 'none') {
@@ -10,37 +17,33 @@ function baseCarryLimit(actorData) {
   return baseLimit;
 }
 
-function carryLimit(actorData) {
-  const bagOfHoldingSize = game.settings.get(MODULE_ID, Settings.BagOfHoldingSize);
-  const hasBagOfHolding = (actorData.items || []).some(function (item) {
-    return !item.flags.isStored && item.type === 'backpack' && item.name === 'Bag of Holding';
-  });
-  if (hasBagOfHolding) {
-    return baseCarryLimit(actorData) + bagOfHoldingSize;
-  }
-  return baseCarryLimit(actorData);
+function getItemCarryCount(item) {
+  if (item.data.consumableType === 'ammo') return 1;
+  if (item.type === 'weapon' && item.data.weaponType === 'simpleR' && (+item.data.weight) < 0.5) return 1; // darts
+  if (item.type === 'consumable' && (item.name === 'Caltrops' || item.name === 'Ball Bearings')) return 1;
+
+  return +item.data.quantity;
 }
 
-function backpackCarryLimit(actorData) {
-  const backpackSize = game.settings.get(MODULE_ID, Settings.BackpackSize);
-  return carryLimit(actorData) + backpackSize;
-}
-
-function carriedItems(actorData) {
-  return (actorData.items || []).reduce(function (acc, item) {
-    if (!item.flags.isStored && item.data.weight) {
-      return acc + (item.data.consumableType === 'ammo' ? 1 : +item.data.quantity);
+function getItemsCountAtLocation(actorData, itemLocation) {
+  return actorData.items.reduce(function (acc, item) {
+    if (item.flags.location === itemLocation && item.data.weight) {
+      return acc + getItemCarryCount(item);
     }
     return acc;
   }, 0);
 }
 
-function carryLimitExceeded(actorData) {
-  return carriedItems(actorData) > carryLimit(actorData);
+function getBackpack(items) {
+  return items.filter(function (item) {
+    return item.type === 'backpack' && (item.name === 'Backpack' || item.name === 'Sack');
+  })[0];
 }
 
-function backpackCarryLimitExceeded(actorData) {
-  return carriedItems(actorData) > backpackCarryLimit(actorData);
+function getBagOfHolding(items) {
+  return items.filter(function (item) {
+    return item.type === 'backpack' && item.name === 'Bag of Holding';
+  })[0];
 }
 
 export function initActor() {
@@ -52,18 +55,38 @@ export function initActor() {
       super.prepareDerivedData();
       const actorData = this.data;
       const data = actorData.data;
-      data.attributes.carryLimit = carryLimit(actorData);
-      data.attributes.backpackCarryLimit = backpackCarryLimit(actorData);
-      data.attributes.carriedItems = carriedItems(actorData);
-      data.attributes.carryLimitExceeded = carryLimitExceeded(actorData);
-      data.attributes.backpackCarryLimitExceeded = backpackCarryLimitExceeded(actorData);
+      actorData.items = (actorData.items || []).map(function (item) {
+        item.flags.location = item.flags.location || ItemLocation.Inventory;
+        return item;
+      });
+
+      data.attributes.inventoryItemsCount = getItemsCountAtLocation(actorData, ItemLocation.Inventory);
+      data.attributes.inventoryLimit = carryLimit(actorData);
+      data.attributes.inventoryFull = data.attributes.inventoryItemsCount >= data.attributes.inventoryLimit;
+      data.attributes.inventorySizeExceeded = data.attributes.inventoryItemsCount > data.attributes.inventoryLimit;
+
+      const backpack = getBackpack(actorData.items);
+      data.attributes.hasBackpack = !!backpack;
+      data.attributes.wearingBackpack = !!backpack && backpack.data.equipped;
+      data.attributes.backpackItemsCount = getItemsCountAtLocation(actorData, ItemLocation.Backpack);
+      data.attributes.backpackLimit = game.settings.get(MODULE_ID, Settings.BackpackSize);
+      data.attributes.backpackFull = data.attributes.backpackItemsCount >= data.attributes.backpackLimit;
+      data.attributes.backpackSizeExceeded = data.attributes.backpackItemsCount > data.attributes.backpackLimit;
+      
+      const bagOfHolding = getBagOfHolding(actorData.items);
+      data.attributes.hasBagOfHolding = !!bagOfHolding;
+      data.attributes.wearingBagOfHolding = !!bagOfHolding && bagOfHolding.data.equipped;
+      data.attributes.bagOfHoldingItemsCount = getItemsCountAtLocation(actorData, ItemLocation.BagOfHolding);
+      data.attributes.bagOfHoldingLimit = game.settings.get(MODULE_ID, Settings.BagOfHoldingSize);
+      data.attributes.bagOfHoldingFull = data.attributes.bagOfHoldingItemsCount >= data.attributes.bagOfHoldingLimit;
+      data.attributes.bagOfHoldingSizeExceeded = data.attributes.bagOfHoldingItemsCount > data.attributes.bagOfHoldingLimit;
     }
 
     rollSkill(skillId, options = {}) {
       const actorData = this.data;
       const data = actorData.data;
       // Add stealth disadvantage if inventory limit is exceeded
-      if (skillId === 'ste' && data.attributes.carryLimitExceeded) {
+      if (skillId === 'ste' && data.attributes.wearingBackpack) {
         const stealthRollOptions = mergeObject(options, {
           advantage: false,
           disadvantage: options.advantage ? false : true,
@@ -86,11 +109,48 @@ export function initActor() {
     }
 
     async moveItemToStorage(itemId) {
-      await this.updateOwnedItem({ _id: itemId, data: { equipped: false }, flags: { isStored: true }});
+      await this.updateOwnedItem({
+        _id: itemId,
+        data: { equipped: false, attuned: false },
+        flags: { location: ItemLocation.Storage },
+      });
+    }
+
+    async moveItemToBackpack(itemId) {
+      const item = this.getOwnedItem(itemId);
+      if (this.data.data.attributes.backpackItemsCount + getItemCarryCount(item.data) > this.data.data.attributes.backpackLimit)
+        ui.notifications.warn('Your Backpack is full! Move some items to other storages.');
+
+      await this.updateOwnedItem({
+        _id: itemId,
+        data: { equipped: false },
+        flags: { location: ItemLocation.Backpack },
+      });
+    }
+
+    async moveItemToBagOfHolding(itemId) {
+      const item = this.getOwnedItem(itemId);
+      if (this.data.data.attributes.bagOfHoldingItemsCount + getItemCarryCount(item.data) > this.data.data.attributes.bagOfHoldingLimit)
+        ui.notifications.warn('Your Bag of Holding is full! Move some items to other storages.');
+      await this.updateOwnedItem({
+        _id: itemId,
+        data: { equipped: false },
+        flags: { location: ItemLocation.BagOfHolding },
+      });
     }
 
     async moveItemToInventory(itemId) {
-      await this.updateOwnedItem({ _id: itemId, flags: { isStored: false } });
+      const item = this.getOwnedItem(itemId);
+      if (this.data.data.attributes.inventoryItemsCount + getItemCarryCount(item.data) > this.data.data.attributes.inventoryLimit)
+        ui.notifications.warn('Your Inventory is full! Move some items to other storages.');
+      await this.updateOwnedItem({ _id: itemId, flags: { location: ItemLocation.Inventory } });
+    }
+
+    /** @Override */
+    _preCreateOwnedItem(itemData, options) {
+      if (this.data.data.attributes.inventoryItemsCount + getItemCarryCount(itemData) > this.data.data.attributes.inventoryLimit)
+        ui.notifications.warn('Your Inventory is full! Move some items to other storages.');
+      return super._preCreateOwnedItem(itemData, options);
     }
   }
 

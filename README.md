@@ -5,14 +5,25 @@ Custom inventory rules for the TPoaJ D&D campaign.
 
 ## Features
 - Soft limit on character's inventory size
-- New item storage for storing non-carried items
-- Move items from inventory to storage, and from storage to inventory
-- Automatically unequip stored items
-- Disadvantage added to automatic stealth rolls if character is wearing a backpack
-- Reminder message in chat about stealth roll rule if character is wearing a backpack
+  - Show reminder when exceeding the limit
+- Separate storages in inventory view in the character sheet
+  - Carried items
+  - Backpack / Sack
+  - Bag of Holding
+  - Item storage
+- Automatically unequip items that are moved away from the inventory
+- Automatically un-attune items that are moved to item storage
+- Disadvantage for stealth rolls if character is wearing a backpack
+  - Disadvantage added to automatic rolls
+  - Reminder alert
+  - Indicator in skill list
+  - **Unequipping the backpack removes indicator and alert**
 - Weightless items are not counted in the carried items
 - Item quantity is considered when calculating carried items
-- Ammo bundles (e.g. Arrows) with quantity > 1 are counted as a single carried item
+- Item exceptions
+  - Ammo bundles (e.g. Arrows) with quantity > 1 are counted as a single carried item
+  - Darts (and other mini ranged weapons) in quantity > 1 are counted as a single carried item
+  - Caltrops and Ball bearings in quantity > 1 are counted as a single carried item
 
 ## Configurable settings
 - **Character's carry limit**: amount of items a PC can carry without using a backpack
