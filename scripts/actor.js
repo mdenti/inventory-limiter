@@ -18,6 +18,9 @@ function carryLimit(actorData) {
 }
 
 function getItemCarryCount(item) {
+  // plutonium import fix
+  if (!item.data) return 1;
+
   if (item.data.consumableType === 'ammo') return 1;
   if (item.type === 'weapon' && item.data.weaponType === 'simpleR' && (+item.data.weight) < 0.5) return 1; // darts
   if (item.type === 'consumable' && (item.name === 'Caltrops' || item.name === 'Ball Bearings')) return 1;
