@@ -1,8 +1,19 @@
 <li class="items-header invlim-header-large flexrow">
   <h3 class="item-name">
-    {{#if data.attributes.inventorySizeExceeded }}
-      <i class="fas fa-exclamation-triangle invlim-warning-icon" title="You've exceeded the amount of items you can carry! Move some to other storages!"></i>
+    {{#if inventoryLimiterEnabled }}
+      {{#if data.attributes.inventorySizeExceeded }}
+        <i class="fas fa-exclamation-triangle invlim-warning-icon" title="You've exceeded the amount of items you can carry! Move some to other storages!"></i>
+      {{/if}}
+      Carried items: {{ data.attributes.inventoryItemsCount}}/{{ data.attributes.inventoryLimit }}
+    {{else}}
+      All items
     {{/if}}
-    Carried items: {{ data.attributes.inventoryItemsCount}}/{{ data.attributes.inventoryLimit }}
   </h3>
+  <a class="inventory-toggle-limiter">
+    {{#if inventoryLimiterEnabled }}
+      Disable limiter
+    {{else}}
+      Enable limiter
+    {{/if}}
+  </a>
 </li>

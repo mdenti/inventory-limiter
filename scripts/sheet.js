@@ -15,6 +15,9 @@ export async function initActorSheet() {
   libWrapper.register('inventory-limiter', 'game.dnd5e.applications.ActorSheet5eCharacter.prototype.getData', function (getData, ...args) {
     const data = getData(...args);
 
+    data.inventoryLimiterEnabled = this.actor.invlim_limiterEnabled();
+    if (!data.inventoryLimiterEnabled) return data;
+
     data.storedItems = data.inventory.map(function (section) {
       return Object.assign({}, section, {
         items: section.items.filter(function (item) { return getItemLocation(item) === ItemLocation.Storage })
@@ -38,21 +41,23 @@ export async function initActorSheet() {
     });
 
     return data;
-
-  }, 'MIXED');
+  }, 'WRAPPER');
 
   libWrapper.register('inventory-limiter', 'game.dnd5e.applications.ActorSheet5eCharacter.prototype._renderInner', async function (_renderInner, data, options) {
     let $html = await _renderInner(data, options);
 
+    $html = await this.invlim_addInventoryHeader($html, data);
+
+    if (!data.inventoryLimiterEnabled) return $html;
+
     $html = this.invlim_addInventoryAction($html, data);
     $html = this.invlim_addDisadvantageIndicator($html, data);
-    $html = await this.invlim_addInventoryHeader($html, data);
     $html = await this.invlim_addBackpackView($html, data);
     $html = await this.invlim_addBagOfHoldingView($html, data);
     $html = await this.invlim_addItemStorageView($html, data);
 
     return $html;
-  }, 'MIXED');
+  }, 'WRAPPER');
 
   game.dnd5e.applications.ActorSheet5eCharacter.prototype.invlim_addInventoryAction = function ($html, data) {
     const hasBackpack = data.data.attributes.hasBackpack;
@@ -111,13 +116,17 @@ export async function initActorSheet() {
   libWrapper.register('inventory-limiter', 'game.dnd5e.applications.ActorSheet5eCharacter.prototype.activateListeners', function (activateListeners, html) {
     const result = activateListeners(html);
 
+    html.find('.inventory-toggle-limiter').click(this.invlim_onToggleLimiter.bind(this));
+
+    if (!this.actor.invlim_limiterEnabled()) return result;
+
     html.find('.item-move-to-backpack').click(this.invlim_onMoveToBackpack.bind(this));
     html.find('.item-move-to-boh').click(this.invlim_onMoveToBagOfHolding.bind(this));
     html.find('.item-move-to-storage').click(this.invlim_onMoveToStorage.bind(this));
     html.find('.item-move-to-inventory').click(this.invlim_onMoveToInventory.bind(this));
     
     return result;
-  }, 'MIXED');
+  }, 'WRAPPER');
 
   game.dnd5e.applications.ActorSheet5eCharacter.prototype.invlim_onMoveToBackpack = function (event) {
     event.preventDefault();
@@ -141,6 +150,12 @@ export async function initActorSheet() {
     event.preventDefault();
     const itemId = event.currentTarget.closest('.item').dataset.itemId;
     this.actor.invlim_moveItemToInventory(itemId);
+  };
+
+  game.dnd5e.applications.ActorSheet5eCharacter.prototype.invlim_onToggleLimiter = function (event) {
+    event.preventDefault();
+    this.actor.invlim_toggleLimiter();
+    this.render();
   };
 
   await loadTemplates([

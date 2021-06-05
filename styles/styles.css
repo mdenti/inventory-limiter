@@ -21,6 +21,11 @@
   text-shadow: 1px 1px 3px #ccc;
 }
 
+.inventory-toggle-limiter {
+  flex: none;
+  padding: 0 5px;
+}
+
 .dnd5e.sheet .items-list .items-header {
   height: 24px;
 }

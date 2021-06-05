@@ -61,13 +61,22 @@ export function initActor() {
     return;
   }
 
+  game.dnd5e.entities.Actor5e.prototype.invlim_toggleLimiter = function () {
+    return this.setFlag('inventory-limiter', 'limiter-enabled', !this.invlim_limiterEnabled());
+  };
+
+  game.dnd5e.entities.Actor5e.prototype.invlim_limiterEnabled = function () {
+    return !!this.getFlag('inventory-limiter', 'limiter-enabled');
+  };
+
   libWrapper.register('inventory-limiter', 'game.dnd5e.entities.Actor5e.prototype.prepareDerivedData', function (prepareDerivedData, ...args) {
     const result = prepareDerivedData(...args);
+    if (!this.invlim_limiterEnabled()) return result;
 
     const actorData = this.data;
     const data = actorData.data;
     (actorData.items || []).forEach(function (item) {
-      item.setFlag('inventory-limiter', 'location', item.getFlag('inventory-limiter', 'location') || ItemLocation.Inventory);
+      if(!item.getFlag('inventory-limiter', 'location')) item.setFlag('inventory-limiter', 'location', ItemLocation.Inventory);
     });
 
     data.attributes.inventoryItemsCount = getItemsCountAtLocation(actorData, ItemLocation.Inventory);
@@ -92,9 +101,11 @@ export function initActor() {
     data.attributes.bagOfHoldingSizeExceeded = data.attributes.bagOfHoldingItemsCount > data.attributes.bagOfHoldingLimit;
 
     return result;
-  }, 'MIXED');
+  }, 'WRAPPER');
 
   libWrapper.register('inventory-limiter', 'game.dnd5e.entities.Actor5e.prototype.rollSkill', function (rollSkill, skillId, options) {
+    if (!this.invlim_limiterEnabled()) return rollSkill(skillId, options);
+
     const actorData = this.data;
     const data = actorData.data;
 
@@ -124,7 +135,7 @@ export function initActor() {
   }, 'MIXED');
 
   libWrapper.register('inventory-limiter', 'game.dnd5e.entities.Actor5e.prototype._onCreateEmbeddedDocuments', function (_onCreateEmbeddedDocuments, embeddedName, documents, ...args) {
-    if (embeddedName === 'Item') {
+    if (this.invlim_limiterEnabled() && embeddedName === 'Item') {
       const addedCarry = (documents || []).reduce(function (acc, item) {
         return acc + getItemCarryCount(item);
       }, 0);
@@ -132,10 +143,10 @@ export function initActor() {
         ui.notifications.warn('Your Inventory is full! Move some items to other storages.');
     }
     return _onCreateEmbeddedDocuments(embeddedName, documents, ...args);
-  }, 'MIXED');
+  }, 'WRAPPER');
 
   libWrapper.register('inventory-limiter', 'game.dnd5e.entities.Actor5e.prototype._onDeleteEmbeddedDocuments', function (_onDeleteEmbeddedDocuments, embeddedName, documents, ...args) {
-    if (embeddedName === 'Item') {
+    if (this.invlim_limiterEnabled() && embeddedName === 'Item') {
       if (documents.some(isBackpack)) {
         this.items.forEach(function (item) {
           if (item.getFlag('inventory-limiter', 'location') === ItemLocation.Backpack) {
@@ -152,7 +163,7 @@ export function initActor() {
       }
     }
     return _onDeleteEmbeddedDocuments(embeddedName, documents, ...args);
-  }, 'MIXED');
+  }, 'WRAPPER');
 
   game.dnd5e.entities.Actor5e.prototype.invlim_moveItemToStorage = async function (itemId) {
     const item = this.items.get(itemId);
