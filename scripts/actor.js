@@ -91,7 +91,6 @@ export function initActor() {
       .filter(function (item) { return !item.getFlag('inventory-limiter', 'location'); })
       .map(getItemLocationUpdate(ItemLocation.Inventory));
     if (updates.length) this.updateEmbeddedDocuments('Item', updates);
-    console.log('updates', updates);
 
     data.attributes.inventoryItemsCount = getItemsCountAtLocation(actorData, ItemLocation.Inventory);
     data.attributes.inventoryLimit = carryLimit(actorData);
