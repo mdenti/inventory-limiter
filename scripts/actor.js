@@ -53,6 +53,17 @@ function getBagOfHolding(items) {
   return items.filter(isBagOfHolding)[0];
 }
 
+function getItemLocationUpdate(location) {
+  return function (item) {
+    return {
+      _id: item.id,
+      flags: {
+        'inventory-limiter': { location },
+      }
+    }
+  };
+}
+
 export function initActor() {
   console.log('inventory-limiter | Actor setup.');
 
@@ -75,9 +86,12 @@ export function initActor() {
 
     const actorData = this.data;
     const data = actorData.data;
-    (actorData.items || []).forEach(function (item) {
-      if(!item.getFlag('inventory-limiter', 'location')) item.setFlag('inventory-limiter', 'location', ItemLocation.Inventory);
-    });
+    
+    const updates = (actorData.items || [])
+      .filter(function (item) { return !item.getFlag('inventory-limiter', 'location'); })
+      .map(getItemLocationUpdate(ItemLocation.Inventory));
+    if (updates.length) this.updateEmbeddedDocuments('Item', updates);
+    console.log('updates', updates);
 
     data.attributes.inventoryItemsCount = getItemsCountAtLocation(actorData, ItemLocation.Inventory);
     data.attributes.inventoryLimit = carryLimit(actorData);
@@ -148,18 +162,16 @@ export function initActor() {
   libWrapper.register('inventory-limiter', 'game.dnd5e.entities.Actor5e.prototype._onDeleteEmbeddedDocuments', function (_onDeleteEmbeddedDocuments, embeddedName, documents, ...args) {
     if (this.invlim_limiterEnabled() && embeddedName === 'Item') {
       if (documents.some(isBackpack)) {
-        this.items.forEach(function (item) {
-          if (item.getFlag('inventory-limiter', 'location') === ItemLocation.Backpack) {
-            item.setFlag('inventory-limiter', 'location', ItemLocation.Inventory);
-          }
-        });
+        const updates = this.items
+          .filter(function (item) { return item.getFlag('inventory-limiter', 'location') === ItemLocation.Backpack; })
+          .map(getItemLocationUpdate(ItemLocation.Inventory));
+        if (updates.length) this.updateEmbeddedDocuments('Item', updates);
       }
       if (documents.some(isBagOfHolding)) {
-        this.items.forEach(function (item) {
-          if (item.getFlag('inventory-limiter', 'location') === ItemLocation.BagOfHolding) {
-            item.setFlag('inventory-limiter', 'location', ItemLocation.Inventory);
-          }
-        });
+        const updates = this.items
+          .filter(function (item) { return item.getFlag('inventory-limiter', 'location') === ItemLocation.BagOfHolding; })
+          .map(getItemLocationUpdate(ItemLocation.Inventory));
+        if (updates.length) this.updateEmbeddedDocuments('Item', updates);
       }
     }
     return _onDeleteEmbeddedDocuments(embeddedName, documents, ...args);
