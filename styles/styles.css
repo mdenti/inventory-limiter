@@ -26,6 +26,12 @@
   padding: 0 5px;
 }
 
+input[type="checkbox"].item-change-stackable {
+  width: 16px;
+  height: 16px;
+  margin-right: 2px;
+}
+
 .dnd5e.sheet .items-list .items-header {
   height: 24px;
 }

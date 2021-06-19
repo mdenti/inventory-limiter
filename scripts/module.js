@@ -1,6 +1,7 @@
 import { initActor } from './actor.js';
 import { initActorSheet } from './sheet.js';
 import { registerSettings } from './settings.js';
+import { initItem, initItemSheet } from './item.js';
 
 Hooks.once('ready', () => {
   if(!game.modules.get('lib-wrapper')?.active && game.user.isGM)
@@ -11,6 +12,8 @@ Hooks.once('setup', async function () {
   console.log('inventory-limiter | Setup.');
   
   registerSettings();
+  initItem();
+  initItemSheet();
   initActor();
   await initActorSheet();
 });

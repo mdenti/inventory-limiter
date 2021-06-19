@@ -19,12 +19,8 @@ function carryLimit(actorData) {
 
 function getItemCarryCount(item) {
   // plutonium import fix
-  if (!item.data || !item.data.data) return 1;
-
-  if (getProperty(item.data, 'data.consumableType') === 'ammo') return 1;
-  if (item.type === 'weapon' && getProperty(item.data, 'data.weaponType') === 'simpleR' && (+getProperty(item.data, 'data.weight') < 0.5)) return 1; // darts
-  if (item.type === 'consumable' && (item.name === 'Caltrops' || item.name === 'Ball Bearings')) return 1;
-
+  if (!item.data || !item.data.data) return 0;
+  if (item.invlim_isStackable()) return 1;
   return +getProperty(item.data, 'data.quantity');
 }
 
@@ -86,10 +82,10 @@ export function initActor() {
 
     const actorData = this.data;
     const data = actorData.data;
-    
+
     const updates = (actorData.items || [])
-      .filter(function (item) { return !item.getFlag('inventory-limiter', 'location'); })
-      .map(getItemLocationUpdate(ItemLocation.Inventory));
+      .map(function (item) { return item.invlim_getInitUpdate(ItemLocation.Inventory); })
+      .filter(function (update) { return !!update; });
     if (updates.length) this.updateEmbeddedDocuments('Item', updates);
 
     data.attributes.inventoryItemsCount = getItemsCountAtLocation(actorData, ItemLocation.Inventory);
