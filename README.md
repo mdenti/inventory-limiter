@@ -20,10 +20,12 @@ Custom inventory rules for the TPoaJ D&D campaign.
   - **Unequipping the backpack removes indicator and alert**
 - Weightless items are not counted in the carried items
 - Item quantity is considered when calculating carried items
-- Item exceptions
-  - Ammo bundles (e.g. Arrows) with quantity > 1 are counted as a single carried item
-  - Darts (and other mini ranged weapons) in quantity > 1 are counted as a single carried item
-  - Caltrops and Ball bearings in quantity > 1 are counted as a single carried item
+- Items can be marked as Stackable in the item sheet
+  - Setting an item as stackable makes it count as 1 carried item regardless of quantity
+  - Items set as stackable by default:
+    - Ammo bundles (e.g. Arrows)
+    - Darts (and other mini ranged weapons)
+    - Caltrops and Ball bearings
 
 ## Configurable settings
 - **Character's carry limit**: amount of items a PC can carry without using a backpack
